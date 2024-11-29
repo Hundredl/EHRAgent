@@ -15,7 +15,8 @@ from metagpt.schema import Message, Task, TaskResult
 from metagpt.strategy.task_type import TaskType
 from metagpt.tools.tool_recommend import BM25ToolRecommender, ToolRecommender
 from metagpt.utils.common import CodeParser
-
+from metagpt.actions.di.write_question import WriteQuestion, precheck_get_question_from_rsp
+from metagpt.actions.di.ask_question import AskQuestion
 REACT_THINK_PROMPT = """
 # User Requirement
 {user_requirement}
@@ -84,9 +85,37 @@ class DataInterpreter(Role):
         """Useful in 'react' mode. Return a Message conforming to Role._act interface."""
         code, _, _ = await self._write_and_exec_code()
         return Message(content=code, role="assistant", cause_by=WriteAnalysisCode)
+    
+    async def ask_question(self, context: list[Message], questions: [str]):
+        answer_all, answered = await AskQuestion().run(context=context, questions=questions)
+        self.planner.working_memory.add(Message(content=answer_all, role="user", cause_by=AskQuestion))
+        return answer_all, answered
+    
+    async def _ask_questions_for_plan(self, goal: str = "", max_questions: int = 3, max_retries: int = 3):
+        context = self.rc.memory.get()
+        print(context)
+        rsp = await WriteQuestion().run(context, max_question=max_questions)
+        self.working_memory.add(Message(content=rsp, role="assistant", cause_by=WriteQuestion))
+        
+        # precheck questions before asking reviews
+        questions_finished = False
+        while not questions_finished:
+            is_valid, error, question_list = precheck_get_question_from_rsp(rsp)
+            if not is_valid and max_retries > 0:
+                error_msg = f"The generated questions are not valid with error: {error}, try regenerating"
+                logger.warning(error_msg)
+                self.working_memory.add(Message(content=error_msg, role="assistant", cause_by=WriteQuestion))
+                max_retries -= 1
+                continue
+            questions_finished = True
+        # ask questions
+        answer_all, answered = await self.ask_question(context=context, questions=question_list)
+        return answer_all, answered
+
 
     async def _plan_and_act(self) -> Message:
         try:
+            await self._ask_questions_for_plan()
             rsp = await super()._plan_and_act()
             await self.execute_code.terminate()
             return rsp
@@ -119,7 +148,7 @@ class DataInterpreter(Role):
 
         # data info
         await self._check_data()
-
+        # success = False
         while not success and counter < max_retry:
             ### write code ###
             code, cause_by = await self._write_code(counter, plan_status, tool_info)
@@ -134,7 +163,6 @@ class DataInterpreter(Role):
 
             ### process execution result ###
             counter += 1
-
             if not success and counter >= max_retry:
                 logger.info("coding failed!")
                 review, _ = await self.planner.ask_review(auto_run=False, trigger=ReviewConst.CODE_REVIEW_TRIGGER)

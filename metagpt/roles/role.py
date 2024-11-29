@@ -532,6 +532,7 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
     @role_raise_decorator
     async def run(self, with_message=None) -> Message | None:
         """Observe, and think and act based on the results of the observation"""
+        print('----------start to run')
         if with_message:
             msg = None
             if isinstance(with_message, str):

@@ -2,7 +2,7 @@ import os
 
 import fire
 
-from examples.di.requirements_prompt import ML_BENCHMARK_REQUIREMENTS
+from requirements_prompt import ML_BENCHMARK_REQUIREMENTS
 from metagpt.const import DATA_PATH
 from metagpt.roles.di.data_interpreter import DataInterpreter
 from metagpt.tools.tool_recommend import TypeMatchToolRecommender
@@ -14,6 +14,7 @@ async def main(task_name, data_dir=DATA_PATH, use_reflection=True):
         raise FileNotFoundError(f"ML-Benchmark dataset not found in {data_dir}.")
 
     requirement = ML_BENCHMARK_REQUIREMENTS[task_name].format(data_dir=data_dir)
+    print(f"Requirement: {requirement}")
     di = DataInterpreter(use_reflection=use_reflection, tool_recommender=TypeMatchToolRecommender(tools=["<all>"]))
     await di.run(requirement)
 

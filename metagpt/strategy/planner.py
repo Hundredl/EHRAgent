@@ -65,6 +65,7 @@ class Planner(BaseModel):
     def current_task_id(self):
         return self.plan.current_task_id
 
+        
     async def update_plan(self, goal: str = "", max_tasks: int = 3, max_retries: int = 3):
         if goal:
             self.plan = Plan(goal=goal)
@@ -72,6 +73,7 @@ class Planner(BaseModel):
         plan_confirmed = False
         while not plan_confirmed:
             context = self.get_useful_memories()
+            logger.info("Current plan context:", context)
             rsp = await WritePlan().run(context, max_tasks=max_tasks)
             self.working_memory.add(Message(content=rsp, role="assistant", cause_by=WritePlan))
 
