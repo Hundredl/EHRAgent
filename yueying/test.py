@@ -20,7 +20,7 @@ async def main(data_dir='/home/wyy/workspace/MetaGPT/data/ehr',use_reflection=Tr
     requirement = """
     This is a chronic kidney disease dataset containing patients’ laboratory test indicators and information on whether they died within one year (Death column).
     The target column is 'Death'.
-    Your goal is to select all the visit which CL is higher than 97.0. 
+    Your goal is to select all the visit which scr is higher than 900.0 and male patient. 
     You should save the selected data to a new csv file.
     You should also report the number of selected visits, and the mean value of the selected visits.
     Data path: '/home/wyy/workspace/MetaGPT/data/ehr/esrd_656_train.csv'
