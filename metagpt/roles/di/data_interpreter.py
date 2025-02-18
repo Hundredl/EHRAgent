@@ -115,7 +115,7 @@ class DataInterpreter(Role):
 
     async def _plan_and_act(self) -> Message:
         try:
-            await self._ask_questions_for_plan()
+            # await self._ask_questions_for_plan()
             rsp = await super()._plan_and_act()
             await self.execute_code.terminate()
             return rsp

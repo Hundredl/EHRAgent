@@ -217,7 +217,19 @@ class ExecuteNbCode(Action):
         else:
             raise ValueError(f"Only support for language: python, markdown, but got {language}, ")
 
-
+    def save_notebook(self, file_path: str):
+        """save notebook to file_path"""
+        with open(file_path, "w") as f:
+            nbformat.write(self.nb, f)
+        print(f"Notebook saved to {file_path}")
+        # save all successful code to a file, filter out failed code
+        # file_path = file_path.replace(".ipynb", "_success.ipynb")
+        # with open(file_path, "w") as f:
+        #     for cell in self.nb.cells:
+        #         is_success, _ = self.parse_outputs(cell.outputs)
+        #         if is_success:
+        #             nbformat.write(cell, f)
+            
 def remove_escape_and_color_codes(input_str: str):
     # 使用正则表达式去除jupyter notebook输出结果中的转义字符和颜色代码
     # Use regular expressions to get rid of escape characters and color codes in jupyter notebook output.
@@ -254,3 +266,5 @@ def display_markdown(content: str):
     with Live(auto_refresh=False, console=Console(), vertical_overflow="visible") as live:
         live.update(Group(*content_panels))
         live.refresh()
+
+
