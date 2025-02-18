@@ -31,7 +31,7 @@ from metagpt.actions import Action, ActionOutput
 from metagpt.actions.action_node import ActionNode
 from metagpt.actions.add_requirement import UserRequirement
 from metagpt.context_mixin import ContextMixin
-from metagpt.logs import logger
+from metagpt.logs import logger, log_llm_stream
 from metagpt.memory import Memory
 from metagpt.provider import HumanProvider
 from metagpt.schema import Message, MessageQueue, SerializationMixin
@@ -533,6 +533,7 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
     async def run(self, with_message=None) -> Message | None:
         """Observe, and think and act based on the results of the observation"""
         print('----------start to run')
+        logger.info(f'running')
         if with_message:
             msg = None
             if isinstance(with_message, str):
@@ -555,6 +556,7 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
         self.set_todo(None)
         # Send the response message to the Environment object to have it relay the message to the subscribers.
         self.publish_message(rsp)
+        log_llm_stream(f'<end session>\n')
         return rsp
 
     @property
