@@ -2,7 +2,6 @@ import os
 import sys
 import fire
 import asyncio
-sys.path.append('/home/wyy/workspace/EHRAgent')
 import streamlit as st
 from streamlit_chatbox import *
 import time
@@ -35,7 +34,7 @@ async def stream_run(queue, di, message):
 
 
 async def main():
-    upload_dir = "/home/wyy/workspace/EHRAgent/data/run_result/test/data"
+    upload_dir = "/home/wyy/workspace/EHRAgent/workspace/esrd/data/"
     st.set_page_config(page_title="EHRAgent: EHR Analysis Assistant", page_icon="🤖", layout="wide")
     st.markdown(
         """
@@ -116,24 +115,26 @@ async def main():
     # Save the prediction result to the path: base_path + '/result/prediction.csv', containing all the 'original' columns in the evaluation dataset, and the probability of death (0 - 1).
     # Draw a line plot to show the prediction result changing with time, y axis is the probability of death, x axis is the date. Only show the first patient's prediction result.
     # """
+
+
     base_path = '/home/wyy/workspace/EHRAgent/data/run_result/test'
-    def find_data(path, suffix):
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                if file.endswith(suffix):
-                    return file
-    training_data_path = find_data(base_path + '/data/', 'train.csv')
-    evaluation_data_path = find_data(base_path + '/data/', 'eval.csv')
-    print(training_data_path, evaluation_data_path)
-    other_prompt = f"""
-    Your workspace base path: {base_path}
-    Summary the process in markdown format and save it to the path: base_path + '/result/summary.md'
-    Summary the process in plain text format and save it to the path: base_path + '/result/summary.txt'
-    Train data path: base_path + '/data/{training_data_path}'
-    Evaluation data path: base_path + '/data/{evaluation_data_path}'
-    Save the model to the path: base_path + '/model/'
-    Name your file appropriately.
-    """
+    # def find_data(path, suffix):
+    #     for root, dirs, files in os.walk(path):
+    #         for file in files:
+    #             if file.endswith(suffix):
+    #                 return file
+    # training_data_path = find_data(base_path + '/data/', 'train.csv')
+    # evaluation_data_path = find_data(base_path + '/data/', 'eval.csv')
+    # print(training_data_path, evaluation_data_path)
+    # other_prompt = f"""
+    # Your workspace base path: {base_path}
+    # Summary the process in markdown format and save it to the path: base_path + '/result/summary.md'
+    # Summary the process in plain text format and save it to the path: base_path + '/result/summary.txt'
+    # Train data path: base_path + '/data/{training_data_path}'
+    # Evaluation data path: base_path + '/data/{evaluation_data_path}'
+    # Save the model to the path: base_path + '/model/'
+    # Name your file appropriately.
+    # """
 
 
     queue = asyncio.Queue()
@@ -162,7 +163,6 @@ async def main():
             
 
             st.write("Analysis in progress... This may take a while⏳")
-            # time.sleep(6)
 
             
             os.makedirs(base_path, exist_ok=True)
@@ -174,12 +174,10 @@ async def main():
 
             
             use_reflection=True
-            # di = DataInterpreter(use_reflection=use_reflection, tool_recommender=TypeMatchToolRecommender(tools=["<all>"]), auto_run=True)
             di = DataInterpreter(use_reflection=use_reflection, auto_run=True)
             
 
             requirement = prompt + other_prompt        
-            # print(requirement)
             # rsp = await di.run(requirement)
             previous_rsp = ''
             with st.expander("Show Details"):
@@ -191,8 +189,7 @@ async def main():
                     placeholder.markdown(previous_rsp)
                 
             # st.write_stream(rsp)
-            # di.execute_code.save_notebook(f'{save_code_dir}/final_code.ipynb')
-
+            di.execute_code.save_notebook(f'{save_code_dir}/final_code.ipynb')
 
             # st.markdown(rsp)
             # read summary and show (stream)

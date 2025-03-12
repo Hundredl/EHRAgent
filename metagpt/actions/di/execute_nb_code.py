@@ -223,12 +223,17 @@ class ExecuteNbCode(Action):
             nbformat.write(self.nb, f)
         print(f"Notebook saved to {file_path}")
         # save all successful code to a file, filter out failed code
-        # file_path = file_path.replace(".ipynb", "_success.ipynb")
-        # with open(file_path, "w") as f:
-        #     for cell in self.nb.cells:
-        #         is_success, _ = self.parse_outputs(cell.outputs)
-        #         if is_success:
-        #             nbformat.write(cell, f)
+        file_path = file_path.replace(".ipynb", "_success.ipynb")
+        success_nb = nbformat.v4.new_notebook()
+        success_nb.metadata = self.nb.metadata
+        with open(file_path, "w") as f:
+            for cell in self.nb.cells:
+                is_success, _ = self.parse_outputs(cell.outputs)
+                if is_success:
+                    success_nb.cells.append(cell)
+            nbformat.write(success_nb, f)
+        print(f"Successful code saved to {file_path}")
+                    
             
 def remove_escape_and_color_codes(input_str: str):
     # 使用正则表达式去除jupyter notebook输出结果中的转义字符和颜色代码
