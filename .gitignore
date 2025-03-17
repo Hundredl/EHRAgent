@@ -2,7 +2,7 @@
 data_old/
 config/
 config/config2.yaml
-
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__

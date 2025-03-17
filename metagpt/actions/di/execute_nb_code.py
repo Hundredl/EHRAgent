@@ -38,9 +38,11 @@ class ExecuteNbCode(Action):
 
     def __init__(
         self,
-        nb=nbformat.v4.new_notebook(),
+        nb=None,
         timeout=600,
     ):
+        if nb is None:
+            nb = nbformat.v4.new_notebook()
         super().__init__(
             nb=nb,
             nb_client=NotebookClient(nb, timeout=timeout),

@@ -43,7 +43,7 @@ def run():
         "batch_size": 81920,
         "main_metric": "auprc",
         "logs_dir": f"{path_base}logs/",
-        "seed": 45,
+        "seed": 46,
     }
     pl = Pipeline(config=config)        
     pl.train()

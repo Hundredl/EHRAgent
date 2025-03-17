@@ -483,6 +483,8 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
             goal = self.rc.memory.get()[-1].content  # retreive latest user requirement
             await self.planner.update_plan(goal=goal)
 
+
+        logger.debug(f'self.planner.current_task: {self.planner.current_task}')
         # take on tasks until all finished
         while self.planner.current_task:
             task = self.planner.current_task
@@ -497,7 +499,7 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
         rsp = self.planner.get_useful_memories()[0]  # return the completed plan as a response
 
         self.rc.memory.add(rsp)  # add to persistent memory
-
+        logger.debug(f"Plan completed: {rsp}")
         return rsp
 
     async def _act_on_task(self, current_task: Task) -> TaskResult:

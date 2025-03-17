@@ -11,6 +11,7 @@ from metagpt.roles.di.data_interpreter import DataInterpreter
 from metagpt.tools.tool_recommend import TypeMatchToolRecommender
 
 
+
 from metagpt.logs import set_llm_stream_logfunc
 
 def stream_pipe_log(queue, content):
@@ -20,6 +21,7 @@ def stream_pipe_log(queue, content):
     asyncio.create_task(queue.put(content))
 
 async def stream_run(queue, di, message):
+    print("stream_run, message:", message)
     di_task = asyncio.create_task(di.run(message))
 
     while True:
@@ -32,10 +34,39 @@ async def stream_run(queue, di, message):
         yield item
 
 
+def stream_data(str):
+    for word in str.split(" "):
+        time.sleep(0.02)
+        yield word + " "
+
+@st.cache_resource
+def initial(path_base):
+    def make_dir(path):
+        path_data = path + '/data/'
+        path_model = path + '/model/'
+        path_result = path + '/result/'
+        path_code = path + '/code/'
+        
+        paths = [path_data, path_model, path_result, path_code]
+        for p in paths:
+            if not os.path.exists(p):
+                os.makedirs(p)
+        
+        return path_data, path_model, path_result, path_code
+
+    path_data, path_model, path_result, path_code = make_dir(path_base)
+    st.session_state.path_data = path_data
+    st.session_state.path_model = path_model
+    st.session_state.path_result = path_result
+    st.session_state.path_code = path_code
+
+    
 
 async def main():
-    upload_dir = "/home/wyy/workspace/EHRAgent/workspace/esrd/data/"
     st.set_page_config(page_title="EHRAgent: EHR Analysis Assistant", page_icon="🤖", layout="wide")
+
+    base_path = '/home/wyy/workspace/EHRAgent/workspace/esrd'
+    initial(base_path)
     st.markdown(
         """
         <div style='text-align: center;'>
@@ -91,6 +122,7 @@ async def main():
     #     st.stop()
 
     with st.spinner("Uploading documents... This may take a while⏳"):
+        upload_dir = st.session_state.path_data
         for uploaded_file in uploaded_files:
             # 获取上传文件的名称
             filename = os.path.join(upload_dir, uploaded_file.name)
@@ -117,7 +149,7 @@ async def main():
     # """
 
 
-    base_path = '/home/wyy/workspace/EHRAgent/data/run_result/test'
+    # base_path = '/home/wyy/workspace/EHRAgent/data/run_result/test'
     # def find_data(path, suffix):
     #     for root, dirs, files in os.walk(path):
     #         for file in files:
@@ -142,68 +174,37 @@ async def main():
     # hook log func
     set_llm_stream_logfunc(lambda content: stream_pipe_log(queue, content))
 
-
-    # st.write_stream(stream_res)
-
     if prompt := st.chat_input('input your question here'):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            # stream = client.chat.completions.create(
-            #     model=st.session_state["openai_model"],
-            #     messages=[
-            #         {"role": m["role"], "content": m["content"]}
-            #         for m in st.session_state.messages
-            #     ],
-            #     stream=True,
-            # )
-            # response = st.write_stream(stream)
-            
-
             st.write("Analysis in progress... This may take a while⏳")
-
-            
-            os.makedirs(base_path, exist_ok=True)
-            os.makedirs(base_path + '/data/', exist_ok=True)
-            os.makedirs(base_path + '/model/', exist_ok=True)
-            os.makedirs(base_path + '/result/', exist_ok=True)
-            os.makedirs(base_path + '/code/', exist_ok=True)
-            save_code_dir = base_path + '/code/'
-
-            
-            use_reflection=True
-            di = DataInterpreter(use_reflection=use_reflection, auto_run=True)
-            
-
-            requirement = prompt + other_prompt        
-            # rsp = await di.run(requirement)
+            requirement = prompt        
+            di = DataInterpreter(use_reflection=True, auto_run=True)
+            di.execute_code.reset()
+            print(f"Instance 1 ID: {id(di.execute_code)}, di.id = {id(di)}")
             previous_rsp = ''
             with st.expander("Show Details"):
                 placeholder = st.empty()
                 async for rsp in stream_run(queue, di, requirement):
-                    # print("hello114514")
-                    # st.write(rsp)
                     previous_rsp += rsp
                     placeholder.markdown(previous_rsp)
-                
-            # st.write_stream(rsp)
-            di.execute_code.save_notebook(f'{save_code_dir}/final_code.ipynb')
 
-            # st.markdown(rsp)
+            now_time = time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
+            notebook_name = f'{now_time}.ipynb'
+            di.execute_code.save_notebook(f'{st.session_state.path_code}/{notebook_name}')
+
             # read summary and show (stream)
-            with open(base_path + '/result/summary.txt', 'r') as f:
-                rsp = f.read()
-                rsp = f"Analysis Done! All result saved to your workspace! \n\n Here is the summary: \n\n{rsp}"
-            st.write_stream(stream_data(rsp))
+            # with open(base_path + '/result/summary.txt', 'r') as f:
+            #     rsp = f.read()
+            #     rsp = f"Analysis Done! All result saved to your workspace! \n\n Here is the summary: \n\n{rsp}"
+            # st.write_stream(stream_data(rsp))
+            st.write(rsp)
             
         st.session_state.messages.append({"role": "assistant", "content": rsp})
     print("rendered")
-def stream_data(str):
-    for word in str.split(" "):
-        time.sleep(0.02)
-        yield word + " "
 
 
 if __name__ == "__main__":
